@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# CleanSocks - Developed by acidvegas in Python (https://acid.vegas/proxytools)
+# CleanSocks - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
 '''
 Requirements:

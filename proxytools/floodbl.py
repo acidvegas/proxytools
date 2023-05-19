@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# FloodBL - Developed by acidvegas in Python (https://acid.vegas/proxytools)
+# FloodBL - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
 '''
 This script will test proxies against a set of Domain Name System-based Blackhole Lists (DNSBL) or Real-time Blackhole Lists (RBL)
