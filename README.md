@@ -6,7 +6,7 @@
 - [PySocks](https://pypi.python.org/pypi/PySocks) *(Required for [cleansocks.py](proxytools/cleansocks.py))*
 
 ## Mirrors
-- [acid.vegas](https://git.acid.vegas/proxytools) *(main)*
+- [acid.vegas](https://git.acid.vegas/proxytools)
 - [GitHub](https://github.com/acidvegas/proxytools)
 - [GitLab](https://gitlab.com/acidvegas/proxytools)
-- [acid.vegas](https://git.supernets.org/proxytools)
+- [SuperNETs](https://git.supernets.org/proxytools)
