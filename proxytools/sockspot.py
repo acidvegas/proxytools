@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SockSpot - Developed by acidvegas in Python (https://acid.vegas/proxytools)
+# SockSpot - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
 import datetime
 import json
@@ -101,7 +101,7 @@ print('#'*56)
 print('#{0}#'.format(''.center(54)))
 print('#{0}#'.format('SockSpot Proxy Scraper'.center(54)))
 print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
-print('#{0}#'.format('https://acid.vegas/proxytools'.center(54)))
+print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
 print('#{0}#'.format(''.center(54)))
 print('#'*56)
 debug(f'Scanning {len(blogspot_list)} URLs from list...')
@@ -113,7 +113,7 @@ for thread in threads:
 	time.sleep(10)
 for thread in threads:
 	threads[thread].join()
-if proxy_value = 0:
+if proxy_value == 0:
 	error('no socks found')
 debug('Found {0} total proxies!'.format(format(len(proxy_list), ',d')))
 with open (proxy_file, 'w') as proxy__file:
