@@ -16,7 +16,10 @@ github_list = (
     'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt',
     'https://raw.githubusercontent.com/UptimerBot/proxy-list/main/proxies/socks5.txt',
     'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks5.txt',
-    'https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/socks5.txt'
+    'https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/socks5.txt',
+	'https://raw.githubusercontent.com/prxchk/proxy-list/main/socks5.txt',
+	'https://raw.githubusercontent.com/Zaeem20/FREE_PROXIES_LIST/master/socks5.txt',
+	'https://spys.me/socks.txt'
 )
 
 def get_source(url):
