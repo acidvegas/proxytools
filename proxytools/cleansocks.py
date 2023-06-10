@@ -31,6 +31,13 @@ def check(proxy):
 		good.append(proxy)
 
 # Main
+print('#'*56)
+print('#{0}#'.format(''.center(54)))
+print('#{0}#'.format('CleanSOCKS Proxy Cleaner'.center(54)))
+print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
+print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
+print('#{0}#'.format(''.center(54)))
+print('#'*56)
 parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
 parser.add_argument('input',           help='file to scan')
 parser.add_argument('output',          help='file to output')

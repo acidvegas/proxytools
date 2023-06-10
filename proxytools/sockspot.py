@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # SockSpot - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
+'''
+
+This script will scan popular blogspots that posts freesh proxies daily
+
+
+Edit: It seems Blogspots for proxies in 2023 is no longer a reliable source.
+This code is old & will possibly be updated again in the future.
+
+'''
+
 import datetime
 import json
 import base64
