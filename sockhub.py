@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 # SockSpot Proxy Scraper - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
+'''
+
+Scrap IP:PORT proxies from a URL list
+
+'''
+
 import os
 import re
 import time
 import urllib.request
 
+# Can be any URL containing a list of IP:PORT proxies (does not have to be socks5)
+# The current list contains proxy sources that are updated frequently with new proxies
+# Almost all of the Github repos pull from the same place & contain duplicates (which are removed)
 urls = set((
 	'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks5.txt',
 	'https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/SOCKS5.txt',
