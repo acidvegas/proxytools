@@ -20,18 +20,25 @@ print_bad  = True
 
 def check(proxy):
 	formatted_ip = '.'.join(proxy.split('.')[::-1])
-	for dnsbl in blackholes:
+	for blackhole in blackholes:
 		try:
-			socket.gethostbyname(f'{formatted_ip}.{dnsbl}')
+			socket.gethostbyname(f'{formatted_ip}.{blackhole}')
 		except socket.gaierror:
 			if print_bad:
-				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy.ljust(22) + f'\033[30m({dnsbl})\033[0m')
+				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy.ljust(22) + f'\033[30m({blackhole})\033[0m')
 			break
 		else:
 			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + proxy)
 			good.append(proxy)
 
 # Main
+print('#'*56)
+print('#{0}#'.format(''.center(54)))
+print('#{0}#'.format('FloodBL Blackhole Checker'.center(54)))
+print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
+print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
+print('#{0}#'.format(''.center(54)))
+print('#'*56)
 parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
 parser.add_argument('input',           help='file to scan')
 parser.add_argument('output',          help='file to output')
