@@ -7,33 +7,26 @@ Test proxies against a set of Domain Name System-based Blackhole Lists (DNSBL) o
 
 '''
 
-import asyncio
 import argparse
+import concurrent.futures
 import os
 import re
 import socket
 
 blackholes = ('dnsbl.dronebl.org','rbl.efnetrbl.org','torexit.dan.me.uk')
 
-async def check(sema, proxy):
-	async with sema:
-		ip  = proxy.split(':')[0]
-		formatted_ip = '.'.join(ip.split('.')[::-1])
-		for dnsbl in blackholes:
-			try:
-				socket.gethostbyname(f'{formatted_ip}.{dnsbl}')
-				print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + ip)
-				good.append(proxy)
-			except socket.gaierror:
-				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + ip.ljust(22) + f'\033[30m({dnsbl})\033[0m')
-				break
-
-async def main(proxies, threads):
-	sema = asyncio.BoundedSemaphore(threads) # B O U N D E D   S E M A P H O R E   G A N G
-	jobs = list()
-	for proxy in proxies:
-		jobs.append(asyncio.ensure_future(check(sema, proxy)))
-	await asyncio.gather(*jobs)
+def check(proxy):
+	ip  = proxy.split(':')[0]
+	formatted_ip = '.'.join(ip.split('.')[::-1])
+	for dnsbl in blackholes:
+		try:
+			socket.gethostbyname(f'{formatted_ip}.{dnsbl}')
+		except socket.gaierror:
+			print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + ip.ljust(22) + f'\033[30m({dnsbl})\033[0m')
+			break
+		else:
+			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + ip)
+			good.append(proxy)
 
 # Main
 parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
@@ -46,7 +39,11 @@ if not os.path.isfile(args.input):
 proxies = re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)
 if not proxies:
 	raise SystemExit('no proxies found from input file')
-asyncio.run(main(proxies, args.threads))
+good = list()
+with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+	checks = {executor.submit(check, proxy): proxy for proxy in proxies}
+	for future in concurrent.futures.as_completed(checks):
+		checks[future]
 good.sort()
 with open(args.output, 'w') as output_file:
 	output_file.write('\n'.join(good))
