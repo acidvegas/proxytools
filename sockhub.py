@@ -7,6 +7,7 @@ Scrap IP:PORT proxies from a URL list
 
 '''
 
+import concurrent.futures
 import os
 import re
 import time
@@ -63,7 +64,7 @@ total = 0
 proxies = list()
 proxy_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proxies.txt')
 print('scanning \033[35m{0:,}\033[0m urls from list...'.format(len(urls)))
-for url in urls:
+for url in urls: # TODO: Maybe add concurrent.futures support for using larger lists
 	try:
 		source = get_source(url)
 	except:
