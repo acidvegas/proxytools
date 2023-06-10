@@ -14,18 +14,21 @@ import re
 import socket
 
 blackholes = ('dnsbl.dronebl.org','rbl.efnetrbl.org','torexit.dan.me.uk')
+good       = list()
+proxies    = list()
+print_bad  = True
 
 def check(proxy):
-	ip  = proxy.split(':')[0]
-	formatted_ip = '.'.join(ip.split('.')[::-1])
+	formatted_ip = '.'.join(proxy.split('.')[::-1])
 	for dnsbl in blackholes:
 		try:
 			socket.gethostbyname(f'{formatted_ip}.{dnsbl}')
 		except socket.gaierror:
-			print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + ip.ljust(22) + f'\033[30m({dnsbl})\033[0m')
+			if print_bad:
+				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy.ljust(22) + f'\033[30m({dnsbl})\033[0m')
 			break
 		else:
-			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + ip)
+			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + proxy)
 			good.append(proxy)
 
 # Main
@@ -36,10 +39,10 @@ parser.add_argument('-t', '--threads', help='number of threads (default: 100)', 
 args = parser.parse_args()
 if not os.path.isfile(args.input):
 	raise SystemExit('no such input file')
-proxies = re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)
+initial = len(open(args.input).readlines())
+proxies = set([proxy.split(':')[0] for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)])
 if not proxies:
 	raise SystemExit('no proxies found from input file')
-good = list()
 with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
 	checks = {executor.submit(check, proxy): proxy for proxy in proxies}
 	for future in concurrent.futures.as_completed(checks):
@@ -47,6 +50,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor
 good.sort()
 with open(args.output, 'w') as output_file:
 	output_file.write('\n'.join(good))
-print('\n\033[34mTotal\033[0m : ' + format(len(proxies),         ',d'))
+print('\033[34mTotal\033[0m : ' + format(len(proxies),           ',d'))
 print('\033[34mGood\033[0m  : ' + format(len(good),              ',d'))
 print('\033[34mBad\033[0m   : ' + format(len(proxies)-len(good), ',d'))
+print('\033[34mDupe\033[0m  : ' + format(initial-len(proxies),   ',d'))
