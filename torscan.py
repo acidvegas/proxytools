@@ -3,7 +3,7 @@
 
 '''
 
-This is a work in progress for now...
+PUll a list of information about all Tor relays & exit relays into a json database
 
 '''
 
@@ -14,27 +14,26 @@ try:
 except ImportError:
 	raise SystemExit('missing required library \'stem\' (https://pypi.org/project/stem/)')
 
-tor_map      = list()
-tor_exit_map = list()
+tor_map = {'relay':list(),'exit':list()}
 
 for relay in stem.descriptor.remote.get_server_descriptors().run():
 	_map = {
 		'nickname'                    : relay.nickname,
 		'fingerprint'                 : relay.fingerprint,
-		'published'                   : relay.published,
+		'published'                   : str(relay.published) if relay.published else None,
 		'address'                     : relay.address,
 		'or_port'                     : relay.or_port,
 		'socks_port'                  : relay.socks_port,
 		'dir_port'                    : relay.dir_port,
-		'platform'                    : relay.platform,
-		'tor_version'                 : relay.tor_version,
+		'platform'                    : str(relay.platform) if relay.platform else None,
+		'tor_version'                 : str(relay.tor_version),
 		'operating_system'            : relay.operating_system,
 		'uptime'                      : relay.uptime,
-		'contact'                     : relay.contact,
-		'exit_policy'                 : relay.exit_policy,
-		'exit_policy_v6'              : relay.exit_policy_v6,
+		'contact'                     : str(relay.contact) if relay.contact else None,
+		'exit_policy'                 : str(relay.exit_policy)    if relay.exit_policy    else None,
+		'exit_policy_v6'              : str(relay.exit_policy_v6) if relay.exit_policy_v6 else None,
 		'bridge_distribution'         : relay.bridge_distribution,
-		'family'                      : relay.family,
+		'family'                      : list(relay.family) if relay.family else None,
 		'average_bandwidth'           : relay.average_bandwidth,
 		'burst_bandwidth'             : relay.burst_bandwidth,
 		'observed_bandwidth'          : relay.observed_bandwidth,
@@ -53,10 +52,10 @@ for relay in stem.descriptor.remote.get_server_descriptors().run():
 		'protocols'                   : relay.protocols
 	}
 	if relay.exit_policy.is_exiting_allowed():
-		tor_exit_map.append(_map)
+		tor_map['exit'].append(_map)
 	else:
-		tor_map.append(_map)
+		tor_map['relay'].append(_map)
 with open('tor.out', 'w') as fd:
-    json.dump(tor_map, fd)
+	json.dump(tor_map['relay'], fd)
 with open('tor.exit.out', 'w') as fd:
-    json.dump(tor_exit_map, fd)
+	json.dump(tor_map['exit'], fd)
