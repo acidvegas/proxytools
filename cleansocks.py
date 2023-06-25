@@ -8,27 +8,43 @@ This script will clean a list of proxies by removing duplicates, checking for va
 '''
 
 import argparse
-import concurrent.futures
+import asyncio
 import os
 import re
 
 # Globals
+all       = list()
 good      = list()
 print_bad = True
 
-def check(proxy):
-	ip, port = proxy.split(':')
-	try:
-		sock = socks.socksocket()
-		sock.set_proxy(socks.SOCKS5, ip, int(port))
-		sock.settimeout(args.timeout)
-		sock.connect('www.google.com', 80)) # NOTE: use your own host instead in-case connections are blocked
-	except:
-		if print_bad:
-			print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy)
-	else:
-		print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + proxy)
-		good.append(proxy)
+async def check(semaphore, proxy):
+	async with semaphore:
+		ip, port = proxy.split(':')
+		options = {
+			'proxy'      : aiosocks.Socks5Addr(proxy.split(':')[0], int(proxy.split(':')[1])),
+			'proxy_auth' : None,
+			'dst'        : ('www.google.com',80),
+			'limit'      : 1024,
+			'ssl'        : None,
+			'family'     : 2
+		}
+		try:
+		    await asyncio.wait_for(aiosocks.open_connection(**options), 15)
+		except:
+			if print_bad:
+				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy)
+		else:
+			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + proxy)
+			if ip not in all:
+				all.append(ip)
+				good.append(proxy)
+
+async def main(targets):
+	sema = asyncio.BoundedSemaphore(500)
+	jobs = list()
+	for target in targets:
+		jobs.append(asyncio.ensure_future(check(sema, target)))
+	await asyncio.gather(*jobs)
 
 # Main
 print('#'*56)
@@ -45,19 +61,16 @@ parser.add_argument('-t', '--threads', help='number of threads      (default: 10
 parser.add_argument('-x', '--timeout', help='socket timeout seconds (default: 15)',  default=15,  type=int)
 args = parser.parse_args()
 try:
-	import socks
+	import aiosocks
 except ImportError:
-	raise SystemExit('missing pysocks module (https://pypi.python.org/pypi/pysocks)')
+	raise SystemExit('missing pysocks module (https://pypi.org/project/aiosocks/)')
 if not os.path.isfile(args.input):
 	raise SystemExit('no such input file')
 initial = len(open(args.input).readlines())
 proxies = set([proxy for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)])
 if not proxies:
 	raise SystemExit('no proxies found from input file')
-with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-	checks = {executor.submit(check, proxy): proxy for proxy in proxies}
-	for future in concurrent.futures.as_completed(checks):
-		checks[future]
+asyncio.run(main(proxies))
 good.sort()
 with open(args.output, 'w') as output_file:
 	output_file.write('\n'.join(good))
