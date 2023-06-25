@@ -7,6 +7,39 @@ Test proxies against a set of Domain Name System-based Blackhole Lists (DNSBL) o
 
 '''
 
+'''
+Notes for future improvement:
+
+To query an IPv6 address, you must expand it, then reverse it into "nibble" format.
+    e.g. if the IP was 2001:db8::1, you expand it to 2001:0db8:0000:0000:0000:0000:0000:0001 and reverse it.
+    In nibble format it is 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2 and add on the dns blacklist you require.
+
+        e.g.   1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.tor.dan.me.uk
+
+    If the IP has a match, the DNS server will respond with an "A" record of 127.0.0.100.
+    It will also respond with a "TXT" record with extra information as per below:
+
+        N:<nodename>/P:<port1[,port2]>/F:<flags>
+
+    port1 is the OR (onion router) port, port2 (if specified) is the DR (directory) port.
+    Flags are defined as follows:
+
+        E     Exit
+        X     Hidden Exit
+        A     Authority
+        B     BadExit
+        C     NoEdConsensus
+        D     V2Dir
+        F     Fast
+        G     Guard
+        H     HSDir
+        N     Named
+        R     Running
+        S     Stable
+        U     Unnamed
+        V     Valid
+'''
+
 import argparse
 import concurrent.futures
 import os
