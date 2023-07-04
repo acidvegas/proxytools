@@ -2,12 +2,6 @@
 # FloodBL - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
 '''
-
-Test proxies against a set of Domain Name System-based Blackhole Lists (DNSBL) or Real-time Blackhole Lists (RBL)
-
-'''
-
-'''
 Notes for future improvement:
 
 To query an IPv6 address, you must expand it, then reverse it into "nibble" format.
@@ -23,7 +17,6 @@ To query an IPv6 address, you must expand it, then reverse it into "nibble" form
 
     port1 is the OR (onion router) port, port2 (if specified) is the DR (directory) port.
     Flags are defined as follows:
-
         E     Exit
         X     Hidden Exit
         A     Authority
@@ -46,23 +39,84 @@ import os
 import re
 import socket
 
-blackholes = ('dnsbl.dronebl.org','rbl.efnetrbl.org','torexit.dan.me.uk')
-good       = list()
-proxies    = list()
-print_bad  = True
+try:
+	import dns.resolver
+except ImportError:
+	raise SystemExit('error: missing required \'dnspython\' library (https://pypi.org/project/dnspython/)')
+
+# Globals
+good    = list()
+bad     = list()
+unknown = list()
+proxies = list()
+
+blackholes = {
+	'dnsbl.dronebl.org': {
+		'2'  : 'Sample',
+		'3'  : 'IRC Drone',
+		'5'  : 'Bottler',
+		'6'  : 'Unknown spambot or drone',
+		'7'  : 'DDOS Drone',
+		'8'  : 'SOCKS Proxy',
+		'9'  : 'HTTP Proxy',
+		'10' : 'ProxyChain',
+		'11' : 'Web Page Proxy',
+		'12' : 'Open DNS Resolver',
+		'13' : 'Brute force attackers',
+		'14' : 'Open Wingate Proxy',
+		'15' : 'Compromised router / gateway',
+		'16' : 'Autorooting worms',
+		'17' : 'Automatically determined botnet IPs (experimental)',
+		'18' : 'DNS/MX type'
+	},
+#	'rbl.efnetrbl.org': { # NOTE: Most IRC networks use DroneBL, un-comment this section to check the EFnetRBL
+#		'1' : "Open Proxy",
+#		'2' : "spamtrap666",
+#		'3' : "spamtrap50",
+#		'4' : "TOR",
+#		'5' : "Drones / Flooding"
+#	},
+#	'torexit.dan.me.uk': { # TODO: The require a TXT lookup, although IRC daemons do numeric replies...will look into this
+#		'E' : 'Exit',
+#		'X' : 'Hidden Exit',
+#		'A' : 'Authority',
+#		'B' : 'BadExit',
+#		'C' : 'NoEdConsensus',
+#		'D' : 'V2Dir',
+#		'F' : 'Fast',
+#		'G' : 'Guard',
+#		'H' : 'HSDir',
+#		'N' : 'Named',
+#		'R' : 'Running',
+#		'S' : 'Stable',
+#		'U' : 'Unnamed',
+#		'V' : 'Valid'
+#	}
+}
 
 def check(proxy):
-	formatted_ip = '.'.join(proxy.split('.')[::-1])
+	proxy_ip     = proxy.split(':')[0]
+	formatted_ip = '.'.join(proxy_ip.split('.')[::-1])
 	for blackhole in blackholes:
 		try:
-			socket.gethostbyname(f'{formatted_ip}.{blackhole}')
-		except socket.gaierror:
-			if print_bad:
-				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy.ljust(22) + f'\033[30m({blackhole})\033[0m')
-			break
-		else:
-			print('\033[1;32mGOOD\033[0m \033[30m|\033[0m ' + proxy)
-			good.append(proxy)
+			results = dns.resolver.resolve(f'{formatted_ip}.{blackhole}', 'A')
+			if results:
+				for result in results:
+					data  = result.to_text()
+					reply = data.split('.')[-1:][0]
+					if reply in blackholes[blackhole]:
+						print(f'{proxy_ip.ljust(15)} \033[1;30m|\033[0m {blackhole.ljust(17)} \033[1;30m|\033[0m \033[1;31m{blackholes[blackhole][reply]}\033[0m')
+						bad.append(proxy)
+					else:
+						print(f'{proxy_ip.ljust(15)} \033[1;30m|\033[0m {blackhole.ljust(17)} \033[1;30m|\033[0m Unknown ({data})')
+						unknown.append(proxy)
+			else:
+				print(f'{proxy_ip.ljust(15)} \033[1;30m|\033[0m {blackhole.ljust(17)} \033[1;30m|\033[0m Error (No results)')
+				unkown.append(proxy)
+		except Exception as ex:
+			print(f'{proxy_ip.ljust(15)} \033[1;30m|\033[0m {blackhole.ljust(17)} \033[1;30m|\033[0m \033[1;32mGOOD\033[0m')
+	if proxy not in bad:
+		good.append(proxy)
 
 # Main
 print('#'*56)
@@ -93,4 +147,3 @@ with open(args.output, 'w') as output_file:
 print('\033[34mTotal\033[0m : ' + format(len(proxies),           ',d'))
 print('\033[34mGood\033[0m  : ' + format(len(good),              ',d'))
 print('\033[34mBad\033[0m   : ' + format(len(proxies)-len(good), ',d'))
-print('\033[34mDupe\033[0m  : ' + format(initial-len(proxies),   ',d'))
