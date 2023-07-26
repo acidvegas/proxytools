@@ -1,23 +1,15 @@
 #!/usr/bin/env python
-# SockSpot Proxy Scraper - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
+# SockHub Proxy Scraper - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
-'''
-
-Scrap IP:PORT proxies from a URL list
-
-'''
-
-import concurrent.futures
 import os
 import re
-import time
 import urllib.request
 
 # Can be any URL containing a list of IP:PORT proxies (does not have to be socks5)
 # The current list contains proxy sources that are updated frequently with new proxies
 # Almost all of the Github repos pull from the same place & contain duplicates (which are removed)
 urls = set((
-	'https://api.openproxylist.xyz/socks4.txt'
+	'https://api.openproxylist.xyz/socks4.txt',
 	'https://api.openproxylist.xyz/socks5.txt',
 	'https://api.proxyscrape.com/?request=displayproxies&proxytype=socks4',
 	'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4',
@@ -76,10 +68,11 @@ urls = set((
 	'https://spys.one/en/socks-proxy-list/'
 ))
 
-def get_source(url):
+def get_source(url: str) -> str:
+	''' Get the source of a URL using a Googlebot user-agent. '''
 	req = urllib.request.Request(url)
 	req.add_header('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)')
-	source  = urllib.request.urlopen(req, timeout=10)
+	source  = urllib.request.urlopen(req, timeout=15)
 	return source.read().decode()
 
 # Main

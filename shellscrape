@@ -1,0 +1,20 @@
+#!/bin/env bash
+# shellscrape - developed by acidvegas (https://git.acid.vegas/proxytools)
+
+URLS=(
+	"https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks4.txt"
+	"https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks5.txt"
+	"https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/SOCKS4.txt"
+	"https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/SOCKS5.txt"
+	"https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt"
+	"https://raw.githubusercontent.com/HyperBeats/proxy-list/main/socks4.txt"
+	"https://raw.githubusercontent.com/HyperBeats/proxy-list/main/socks5.txt"
+)
+
+[ -f proxies.txt ] >proxies.txt
+for URL in "${URLS[@]}"; do
+    echo "Downloading from $URL"
+    curl -s $URL >> proxies.txt &
+done
+sort -u -o proxies.txt proxies.txt
+echo "done"

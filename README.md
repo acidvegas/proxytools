@@ -9,4 +9,4 @@
 ___
 
 ###### Mirrors
-[acid.vegas](https://git.acid.vegas/proxytools) • [GitHub](https://github.com/acidvegas/proxytools) • [GitLab](https://gitlab.com/acidvegas/proxytools) • [SourceHut](https://git.sr.ht/~acidvegas/proxytools) • [SuperNETs](https://git.supernets.org/acidvegas/proxytools)
+[acid.vegas](https://git.acid.vegas/proxytools) • [GitHub](https://github.com/acidvegas/proxytools) • [GitLab](https://gitlab.com/acidvegas/proxytools) • [SuperNETs](https://git.supernets.org/acidvegas/proxytools)
