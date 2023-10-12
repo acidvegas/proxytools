@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # Tor Glass - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
-import json
+'''
+A simple script to pull a list of all the Tor relays / exit nodes & generate a json database.
+
+The example below will generate a map of all the Tor relays / exit nodes using the ipinfo.io API.
+'''
 
 try:
 	import stem.descriptor.remote
@@ -52,25 +56,31 @@ def get_descriptors() -> dict:
 			tor_map['relay'].append(data)
 	return tor_map
 
+
 if __name__ == '__main__':
+	import json
+
 	print('loading Tor descriptors... (this could take a while)')
 	tor_data = get_descriptors()
+	
 	with open('tor.json', 'w') as fd:
 		json.dump(tor_data['relay'], fd)
 	with open('tor.exit.json', 'w') as fd:
 		json.dump(tor_data['exit'], fd)
+
 	print('Relays: {0:,}'.foramt(len(tor_data['relay'])))
 	print('Exits : {0:,}'.format(len(tor_data['exit'])))
+
 	try:
 		import ipinfo
 	except ImportError:
-		print('missing optional library \'ipinfo\' (https://pypi.org/project/ipinfo/) for map visualization')
-	else:
-		try:
-			handler = ipinfo.getHandler('changeme') # put your ipinfo.io API key here
-			print('Relay Map: ' + handler.getMap([ip['address'] for ip in tor_data['relay']]))
-			print('Exit  Map: ' + handler.getMap([ip['address'] for ip in tor_data['exit']]))
-		except ipinfo.errors.AuthorizationError:
-			print('error: invalid ipinfo.io API key (https://ipinfo.io/signup)')
-		except Exception as ex:
-			print(f'error generating ipinfo map ({ex})')
+		raise ImportError('missing optional library \'ipinfo\' (https://pypi.org/project/ipinfo/) for map visualization')
+	
+	try:
+		handler = ipinfo.getHandler('changeme') # put your ipinfo.io API key here
+		print('Relay Map: ' + handler.getMap([ip['address'] for ip in tor_data['relay']]))
+		print('Exit  Map: ' + handler.getMap([ip['address'] for ip in tor_data['exit']]))
+	except ipinfo.errors.AuthorizationError:
+		print('error: invalid ipinfo.io API key (https://ipinfo.io/signup)')
+	except Exception as ex:
+		print(f'error generating ipinfo map ({ex})')

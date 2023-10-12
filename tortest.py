@@ -19,8 +19,12 @@ EXIT_FINGERPRINT = '379FB450010D17078B3766C2273303C358C3A442' # https://metrics.
 SOCKS_PORT = 9050
 CONNECTION_TIMEOUT = 30  # timeout before we give up on a circuit
 
-def query(url):
-    ''' Uses pycurl to fetch a site using the proxy on the SOCKS_PORT. '''
+def query(url: str):
+    '''
+    Uses pycurl to fetch a site using the proxy on the SOCKS_PORT.
+    
+    :param url: the url to fetch
+    '''
     output = io.StringIO.StringIO()
     query = pycurl.Curl()
     query.setopt(pycurl.URL, url)
@@ -36,7 +40,12 @@ def query(url):
         raise ValueError("Unable to reach %s (%s)" % (url, exc))
 
 def scan(controller, path):
-    ''' Test the connection to a website through the given path of relays using the given controller '''
+    '''
+    Test the connection to a website through the given path of relays using the given controller.
+    
+    :param controller: the controller to use
+    :param path: a list of fingerprints, in order, to build a path through
+    '''
     circuit_id = controller.new_circuit(path, await_build = True)
     def attach_stream(stream):
         if stream.status == 'NEW':
@@ -54,12 +63,13 @@ def scan(controller, path):
         controller.reset_conf('__LeaveStreamsUnattached')
 
 # Main
-with stem.control.Controller.from_port(port=9056) as controller:
-    controller.authenticate('loldongs')
-    relay_fingerprints = [desc.fingerprint for desc in controller.get_network_statuses()]
-    for fingerprint in relay_fingerprints:
-        try:
-            time_taken = scan(controller, [fingerprint, EXIT_FINGERPRINT])
-            print('%s => %0.2f seconds' % (fingerprint, time_taken))
-        except Exception as exc:
-            print('%s => %s' % (fingerprint, exc))
+if __name__ == '__main__':
+    with stem.control.Controller.from_port(port=9056) as controller:
+        controller.authenticate('CHANGEME') # Change this to your Tor control password
+        relay_fingerprints = [desc.fingerprint for desc in controller.get_network_statuses()]
+        for fingerprint in relay_fingerprints:
+            try:
+                time_taken = scan(controller, [fingerprint, EXIT_FINGERPRINT])
+                print('%s => %0.2f seconds' % (fingerprint, time_taken))
+            except Exception as exc:
+                print('%s => %s' % (fingerprint, exc))

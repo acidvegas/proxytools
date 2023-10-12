@@ -48,7 +48,12 @@ blackholes = {
 	}
 }
 
-def check(proxy):
+def check(proxy: str):
+	'''
+	Check if a proxy is blackholed.
+
+	:param proxy: the proxy to check in the format of ip:port
+	'''
 	proxy_ip     = proxy.split(':')[0]
 	formatted_ip = ipaddress.ip_address(proxy_ip).reverse_pointer
 	for blackhole in blackholes:
