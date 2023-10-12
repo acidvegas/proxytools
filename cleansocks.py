@@ -29,7 +29,7 @@ async def check(semaphore, proxy):
 			'family'     : 2
 		}
 		try:
-		    await asyncio.wait_for(aiosocks.open_connection(**options), 15)
+			await asyncio.wait_for(aiosocks.open_connection(**options), 15)
 		except:
 			if print_bad:
 				print('\033[1;31mBAD\033[0m  \033[30m|\033[0m ' + proxy)
