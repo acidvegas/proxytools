@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # FloodBL - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
+# This script will check a list of proxies aginst DNS Blackhole (DNSBL) lists to see if they are blackholed.
+# Todo: Add support for asynchronous DNSBL lookups and proper IPv6 support.
+
 import argparse
 import concurrent.futures
 import ipaddress
@@ -77,32 +80,41 @@ def check(proxy: str):
 	if proxy not in bad:
 		good.append(proxy)
 
-# Main
-print('#'*56)
-print('#{0}#'.format(''.center(54)))
-print('#{0}#'.format('FloodBL Blackhole Checker'.center(54)))
-print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
-print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
-print('#{0}#'.format(''.center(54)))
-print('#'*56)
-parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
-parser.add_argument('input',           help='file to scan')
-parser.add_argument('output',          help='file to output')
-parser.add_argument('-t', '--threads', help='number of threads (default: 100)', default=100, type=int)
-args = parser.parse_args()
-if not os.path.isfile(args.input):
-	raise SystemExit('no such input file')
-initial = len(open(args.input).readlines())
-proxies = set([proxy.split(':')[0] for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)]) # TODO: handle IPv6 better
-if not proxies:
-	raise SystemExit('no proxies found from input file')
-with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-	checks = {executor.submit(check, proxy): proxy for proxy in proxies}
-	for future in concurrent.futures.as_completed(checks):
-		checks[future]
-good.sort()
-with open(args.output, 'w') as output_file:
-	output_file.write('\n'.join(good))
-print('\033[34mTotal\033[0m : ' + format(len(proxies),           ',d'))
-print('\033[34mGood\033[0m  : ' + format(len(good),              ',d'))
-print('\033[34mBad\033[0m   : ' + format(len(proxies)-len(good), ',d'))
+
+if __name__ == '__main__':
+	print('#'*56)
+	print('#{0}#'.format(''.center(54)))
+	print('#{0}#'.format('FloodBL Blackhole Checker'.center(54)))
+	print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
+	print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
+	print('#{0}#'.format(''.center(54)))
+	print('#'*56)
+
+	parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
+	parser.add_argument('input',           help='file to scan')
+	parser.add_argument('output',          help='file to output')
+	parser.add_argument('-t', '--threads', help='number of threads (default: 100)', default=100, type=int)
+	args = parser.parse_args()
+
+	if not os.path.isfile(args.input):
+		raise SystemExit('no such input file')
+
+	initial = len(open(args.input).readlines())
+	proxies = set([proxy.split(':')[0] for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', open(args.input).read(), re.MULTILINE)]) # TODO: handle IPv6 better
+
+	if not proxies:
+		raise SystemExit('no proxies found from input file')
+
+	with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+		checks = {executor.submit(check, proxy): proxy for proxy in proxies}
+		for future in concurrent.futures.as_completed(checks):
+			checks[future]
+
+	good.sort()
+
+	with open(args.output, 'w') as output_file:
+		output_file.write('\n'.join(good))
+
+	print('\033[34mTotal\033[0m : ' + format(len(proxies),           ',d'))
+	print('\033[34mGood\033[0m  : ' + format(len(good),              ',d'))
+	print('\033[34mBad\033[0m   : ' + format(len(proxies)-len(good), ',d'))
