@@ -4,15 +4,20 @@
 
 import argparse
 import asyncio
+import aiofiles
+import aiosocks
 import os
 import re
+import signal
+import sys
+
+default_timeout = 10
+default_threads = 16
 
 all       = []
 good      = []
 print_bad = True
-
-default_timeout = 10
-default_threads = 16
+outfile = None
 
 timeout = default_timeout
 threads = default_threads
@@ -35,18 +40,32 @@ async def check(semaphore, proxy):
         }
         try:
             await asyncio.wait_for(aiosocks.open_connection(**options), timeout)
-            print(good_str + proxy)
-            if ip not in all:
-                all.append(ip)
-                good.append(proxy)
-        except:
+        except OverflowError as e:
+            print(bad_str + proxy)
+            return
+        except aiosocks.errors.SocksConnectionError as e:
+            print(bad_str + proxy)
+            return
+        except aiosocks.errors.SocksError as e:
+            print(bad_str + proxy)
+            return
+        except asyncio.exceptions.TimeoutError as e:
+            print(bad_str + proxy)
+            return
+        except ConnectionResetError as e:
+            print(bad_str + proxy)
+            return
+        except Exception as e:
             if print_bad:
+                print(type(e))
                 print(bad_str + proxy)
-        else:
-            print(good_str + proxy)
-            if ip not in all:
-                all.append(ip)
-                good.append(proxy)
+                return
+        print(good_str + proxy)
+        async with aiofiles.open(outfile, 'a') as good_file:
+            await good_file.write(f"{proxy}\n")
+
+
+
 
 async def main(targets):
     print('\033[34mTimeout\033[0m : ' + format(timeout, ',d'))
@@ -64,8 +83,12 @@ async def main(targets):
         await asyncio.gather(*job_list)
 
 
-# Main
-if __name__ == '__main__':
+def signal_handler(sig, frame):
+    print("\nExiting...")
+    sys.exit(0)
+
+
+def print_title():
     print('#'*56)
     print('#{0}#'.format(''.center(54)))
     print('#{0}#'.format('CleanSOCKS Proxy Cleaner'.center(54)))
@@ -74,43 +97,34 @@ if __name__ == '__main__':
     print('#{0}#'.format(''.center(54)))
     print('#'*56)
 
+
+def build_parser():
     parser = argparse.ArgumentParser(usage='%(prog)s <input> <output> [options]')
     parser.add_argument('input', help='file to scan')
     parser.add_argument('output', help='file to output')
     parser.add_argument('-t', '--threads', 
             help=f'number of threads (default: {default_threads})', default=default_threads, type=int)
     parser.add_argument('-x', '--timeout', 
-            help=f'socket timeout seconds (default: {default_timeout})',  default=default_timeout,  type=int)
+            help=f'socket timeout seconds (default: {default_timeout})',  default=default_timeout, type=int)
+    return parser
+
+
+if __name__ == '__main__':
+    print_title()
+    # register signal handler
+    signal.signal(signal.SIGINT, signal_handler)
+    parser = build_parser()
     args = parser.parse_args()
     timeout = args.timeout
     threads = args.threads
-
-    try:
-        import aiosocks
-    except ImportError:
-        raise SystemExit('missing pysocks module (https://pypi.org/project/aiosocks/)')
-
     if not os.path.isfile(args.input):
         raise SystemExit('no such input file')
-
+    outfile = args.output
     initial = len(open(args.input).readlines())
     ip_regex_str = '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+'
     proxies = set([proxy for proxy in re.findall(ip_regex_str, open(args.input).read(), re.MULTILINE)])
-
     if not proxies:
         raise SystemExit('no proxies found from input file')
-
     asyncio.run(main(proxies))
     good.sort()
-
-    with open(args.output, 'w') as output_file:
-        output_file.write('\n'.join(good))
-
-
-    print('\033[34mTotal\033[0m : ' + format(len(proxies),           ',d'))
-    print('\033[34mGood\033[0m  : ' + format(len(good),              ',d'))
-    print('\033[34mBad\033[0m   : ' + format(len(proxies)-len(good), ',d'))
-    print('\033[34mDupe\033[0m  : ' + format(initial-len(proxies),   ',d'))
-
-
 
