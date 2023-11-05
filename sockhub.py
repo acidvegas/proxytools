@@ -4,6 +4,7 @@
 import os
 import re
 import urllib.request
+import concurrent.futures
 
 # Can be any URL containing a list of IP:PORT proxies (does not have to be socks5)
 # The current list contains proxy sources that are updated frequently with new proxies
@@ -85,26 +86,33 @@ def main():
     proxies = list()
     proxy_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proxies.txt')
     print('scanning \033[35m{0:,}\033[0m urls from list...'.format(len(URLS)))
-    for url in URLS:  # TODO: Maybe add concurrent.futures support for using larger lists
-        try:
-            source = get_source(url)
-        except:
-            print(
-                'found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(failed to load)\033[0m'.format(url))
-        else:
-            total += len(source.split())
-            found = set([proxy for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', source, re.MULTILINE) if
-                         proxy not in proxies])
-            if found:
-                proxies += found
-                print('found \033[32m{0:,}\033[0m new proxies on \033[34m{1}\033[0m'.format(len(found), url))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_url = {executor.submit(get_source, url): url for url in URLS}
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                source = future.result()
+            except:
+                print('found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(failed to load)\033[0m'.format(
+                    url))
             else:
-                print(
-                    'found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(duplicates)\033[0m'.format(url))
+                total += len(source.split())
+                found = set(
+                    [proxy for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', source, re.MULTILINE) if
+                     proxy not in proxies])
+                if found:
+                    proxies += found
+                    print('found \033[32m{0:,}\033[0m new proxies on \033[34m{1}\033[0m'.format(len(found), url))
+                else:
+                    print('found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(duplicates)\033[0m'.format(
+                        url))
+
     if proxies:
         if len(proxies) < total:
-            print('found \033[32m{0:,}\033[0m total proxies! \033[30m({1:,} duplicates removed)\033[0m'.format(
-                len(proxies), total - len(proxies)))
+            print('found \033[32m{0:,}\033[0m total proxies! \033[30m({1:,} duplicates removed)\033[0m'.format(len(proxies),
+                                                                                                               total - len(
+                                                                                                                   proxies)))
         else:
             print('found \033[32m{0:,}\033[0m total proxies!'.format(len(proxies)))
         proxies.sort()
