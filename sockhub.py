@@ -8,7 +8,7 @@ import urllib.request
 # Can be any URL containing a list of IP:PORT proxies (does not have to be socks5)
 # The current list contains proxy sources that are updated frequently with new proxies
 # Almost all of the Github repos pull from the same place & contain duplicates (which are removed)
-urls = set((
+URLS = set((
     'https://api.openproxylist.xyz/socks4.txt',
     'https://api.openproxylist.xyz/socks5.txt',
     'https://api.proxyscrape.com/?request=displayproxies&proxytype=socks4',
@@ -84,8 +84,8 @@ def main():
     total = 0
     proxies = list()
     proxy_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proxies.txt')
-    print('scanning \033[35m{0:,}\033[0m urls from list...'.format(len(urls)))
-    for url in urls:  # TODO: Maybe add concurrent.futures support for using larger lists
+    print('scanning \033[35m{0:,}\033[0m urls from list...'.format(len(URLS)))
+    for url in URLS:  # TODO: Maybe add concurrent.futures support for using larger lists
         try:
             source = get_source(url)
         except:
