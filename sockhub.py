@@ -78,14 +78,9 @@ def get_source(url: str) -> str:
 
 
 def main():
-    # Main
-    print('#' * 56)
-    print('#{0}#'.format(''.center(54)))
-    print('#{0}#'.format('SockHub Proxy Scraper'.center(54)))
-    print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
-    print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
-    print('#{0}#'.format(''.center(54)))
-    print('#' * 56)
+    """Main entry point."""
+    print_banner()
+
     total = 0
     proxies = list()
     proxy_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proxies.txt')
@@ -116,6 +111,16 @@ def main():
         with open(proxy_file, 'w') as proxy__file:
             for proxy in proxies:
                 proxy__file.write(proxy + '\n')
+
+
+def print_banner():
+    print('#' * 56)
+    print('#{0}#'.format(''.center(54)))
+    print('#{0}#'.format('SockHub Proxy Scraper'.center(54)))
+    print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
+    print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
+    print('#{0}#'.format(''.center(54)))
+    print('#' * 56)
 
 
 if __name__ == '__main__':
