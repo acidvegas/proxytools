@@ -1,111 +1,72 @@
 #!/usr/bin/env python
 # SockHub Proxy Scraper - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)
 
+'''
+There is a file in this repository called proxy_sources.txt which contains a list of URLs to scrape for proxies.
+This list it not maintained and may contain dead links or links to sites that no longer contain proxies.
+'''
+
+import concurrent.futures
+import logging
 import os
 import re
 import urllib.request
 
-# Can be any URL containing a list of IP:PORT proxies (does not have to be socks5)
-# The current list contains proxy sources that are updated frequently with new proxies
-# Almost all of the Github repos pull from the same place & contain duplicates (which are removed)
-urls = set((
-	'https://api.openproxylist.xyz/socks4.txt',
-	'https://api.openproxylist.xyz/socks5.txt',
-	'https://api.proxyscrape.com/?request=displayproxies&proxytype=socks4',
-	'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4',
-	'https://api.proxyscrape.com/?request=displayproxies&proxytype=socks5',
-	'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5',
-	'https://proxy-list.download/api/v1/get?type=socks4',
-	'https://proxy-list.download/api/v1/get?type=socks5',
-	'https://proxyscan.io/download?type=socks4',
-	'https://proxyscan.io/download?type=socks5',
-	'https://proxyspace.pro/socks4.txt',
-	'https://proxyspace.pro/socks5.txt',
-	'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks4.txt',
-	'https://raw.githubusercontent.com/ALIILAPRO/Proxy/main/socks5.txt',
-	'https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/SOCKS4.txt',
-	'https://raw.githubusercontent.com/B4RC0DE-TM/proxy-list/main/SOCKS5.txt',
-	'https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt',
-	'https://raw.githubusercontent.com/HyperBeats/proxy-list/main/socks4.txt',
-	'https://raw.githubusercontent.com/HyperBeats/proxy-list/main/socks5.txt',
-	'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks4.txt',
-	'https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-socks5.txt',
-	'https://raw.githubusercontent.com/manuGMG/proxy-365/main/SOCKS4.txt',
-	'https://raw.githubusercontent.com/manuGMG/proxy-365/main/SOCKS5.txt',
-	'https://raw.githubusercontent.com/mmpx12/proxy-list/master/socks4.txt',
-	'https://raw.githubusercontent.com/mmpx12/proxy-list/master/socks5.txt',
-	'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks4.txt',
-	'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt',
-	'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies_anonymous/socks4.txt',
-	'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies_anonymous/socks5.txt',
-	'https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/socks4.txt',
-	'https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/socks5.txt',
-	'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks5/socks4.txt',
-	'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks5/socks5.txt',
-	'https://raw.githubusercontent.com/prxchk/proxy-list/main/socks4.txt',
-	'https://raw.githubusercontent.com/prxchk/proxy-list/main/socks5.txt',
-	'https://raw.githubusercontent.com/rdavydov/proxy-list/main/proxies/socks4.txt',
-	'https://raw.githubusercontent.com/rdavydov/proxy-list/main/proxies/socks5.txt',
-	'https://raw.githubusercontent.com/rdavydov/proxy-list/main/proxies_anonymous/socks4.txt',
-	'https://raw.githubusercontent.com/rdavydov/proxy-list/main/proxies_anonymous/socks5.txt',
-	'https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS4_RAW.txt',
-	'https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS5_RAW.txt',
-	'https://raw.githubusercontent.com/RX4096/proxy-list/main/online/socks4.txt',
-	'https://raw.githubusercontent.com/RX4096/proxy-list/main/online/socks5.txt',
-	'https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/socks4.txt',
-	'https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/socks5.txt',
-	'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks4.txt',
-	'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks5.txt',
-	'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt',
-	'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt',
-	'https://raw.githubusercontent.com/UptimerBot/proxy-list/main/proxies/socks4.txt',
-	'https://raw.githubusercontent.com/UptimerBot/proxy-list/main/proxies/socks5.txt',
-	'https://raw.githubusercontent.com/Zaeem20/FREE_PROXIES_LIST/master/socks4.txt',
-	'https://raw.githubusercontent.com/Zaeem20/FREE_PROXIES_LIST/master/socks5.txt',
-	'https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks4.txt',
-	'https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks5.txt',
-	'https://spys.me/socks.txt',
-	'https://spys.one/en/socks-proxy-list/'
-))
-
-def get_source(url: str) -> str:
-	''' Get the source of a URL using a Googlebot user-agent. '''
-	req = urllib.request.Request(url)
-	req.add_header('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)')
-	source  = urllib.request.urlopen(req, timeout=15)
-	return source.read().decode()
-
-# Main
-print('#'*56)
-print('#{0}#'.format(''.center(54)))
-print('#{0}#'.format('SockHub Proxy Scraper'.center(54)))
-print('#{0}#'.format('Developed by acidvegas in Python'.center(54)))
-print('#{0}#'.format('https://git.acid.vegas/proxytools'.center(54)))
-print('#{0}#'.format(''.center(54)))
-print('#'*56)
-total = 0
+# Global
 proxies = list()
-proxy_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proxies.txt')
-print('scanning \033[35m{0:,}\033[0m urls from list...'.format(len(urls)))
-for url in urls: # TODO: Maybe add concurrent.futures support for using larger lists
+
+def find_proxies(url: str) -> str:
+	'''
+	Check a URL for IP:PORT proxies.
+	
+	:param url: The URL to check for proxies.
+	'''
 	try:
-		source = get_source(url)
-	except:
-		print('found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(failed to load)\033[0m'.format(url))
-	else:
-		total+= len(source.split())
-		found = set([proxy for proxy in re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', source, re.MULTILINE) if proxy not in proxies])
-		if found:
-			proxies += found
-			print('found \033[32m{0:,}\033[0m new proxies on \033[34m{1}\033[0m'.format(len(found), url))
+		source = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'SockHub/1.0'})).read().decode()
+		if source:
+			found = set(re.findall('[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+', source, re.MULTILINE))
+			if (new_proxies := [proxy for proxy in found if proxy not in proxies]):
+				proxies += new_proxies
+				print(f'found \033[32m{len(found):,}\033[0m new proxies on \033[34m{url}\033[0m')
 		else:
-			print('found \033[31m0\033[0m new proxies on \033[34m{0}\033[0m \033[30m(duplicates)\033[0m'.format(url))
-if proxies:
-	if len(proxies) < total:
-		print('found \033[32m{0:,}\033[0m total proxies! \033[30m({1:,} duplicates removed)\033[0m'.format(len(proxies), total-len(proxies)))
+			logging.warning(f'found \033[31m0\033[0m new proxies on \033[34m{url}\033[0m \033[30m(source is empty)\033[0m')
+	except Exception as ex:
+		logging.error(f'found \033[31m0\033[0m new proxies on \033[34m{url}\033[0m \033[30m({ex})\033[0m')
+
+
+if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser(description='SockHub Proxy Scraper - Developed by acidvegas in Python (https://git.acid.vegas/proxytools)')
+	parser.add_argument('-i', '--input',  help='input file containing a list of URLs to scrape (one per line) or a single URL')
+	parser.add_argument('-o', '--output', help='output file to save proxies to', default='proxies.txt')
+	parser.add_argument('-c', '--concurrency', help='number of concurrent threads to use (default: 10)', default=10, type=int)
+	args = parser.parse_args()
+
+	logging.basicConfig(format='%(level)s %(message)s', level=logging.INFO)
+
+	if not os.path.isfile(args.input):
+		if args.input.startswith('https://') or args.input.startswith('http://'):
+			logging.info('using input as a single url...')
+			proxy_sources = [args.input]
+		else:
+			logging.fatal('input file does not exist!')
+	
+	proxy_sources = open(args.input, 'r').read().split('\n')
+
+	if not proxy_sources:
+		logging.fatal('proxy sources input file is empty!')
+
+	logging.debug('scanning \033[35m{len(urls):,}\033[0m urls from list...')
+
+	with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as executor:
+		futures = [executor.submit(find_proxies, url) for url in proxy_sources]
+	concurrent.futures.wait(futures)
+	
+	if proxies:
+		logging.info('found \033[32m{len(proxies):,}\033[0m total proxies!')
+		proxies.sort()
+		with open (args.output, 'w') as output_file:
+			for proxy in proxies:
+				output_file.write(proxy + '\n')
 	else:
-		print('found \033[32m{0:,}\033[0m total proxies!'.format(len(proxies)))
-	proxies.sort()
-	with open (proxy_file, 'w') as proxy__file:
-		for proxy in proxies:
-			proxy__file.write(proxy + '\n')
+		logging.warning('no proxies found!')
