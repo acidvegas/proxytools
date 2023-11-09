@@ -1,0 +1,34 @@
+#!/bin/env bash
+# shellsocked - developed by acidvegas (https://git.acid.vegas/proxytools)
+
+# Probably the most basic proxy scraper ever made, pure POSIX, no dependencies, no bullshit.
+# Duplicate proxies are removed and the output is sorted and saved to a file.
+# Feed it a single URL or a file with a list of URLs to scrape.
+
+scrape_url() {
+    local url="$1"
+    local proxies=$(curl -s -A "ShellSocked/1.0" "$url" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+' | awk '!seen[$0]++')
+    local count=$(echo "$proxies" | wc -l)
+    PROXIES="${PROXIES}${proxies}"
+    echo -e "Found \033[32m${count}\033[0m proxies on \033[33m${url}\033[0m"
+}
+
+if [ -n "$1" ]
+    PROXIES=""
+    if [ -f "$1" ]; then
+        while IFS= read -r url; do
+            scrape_url "$url"
+        done < "$1"
+    else
+        scrape_url "$1"
+    fi
+else
+    echo "Usage: $0 <input_file | single_url>"
+    exit 1
+fi
+
+PROXIES=$(printf "%s\n" "$PROXIES" | sort -u)
+printf "%s\n" "$PROXIES" > proxies.txt
+
+total_count=$(echo "$PROXIES" | wc -l)
+echo "Grand Total: ${total_count} proxies"
