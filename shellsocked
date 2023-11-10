@@ -13,7 +13,7 @@ scrape_url() {
     echo -e "Found \033[32m${count}\033[0m proxies on \033[33m${url}\033[0m"
 }
 
-if [ -n "$1" ]
+if [ -n "$1" ]; then
     PROXIES=""
     if [ -f "$1" ]; then
         while IFS= read -r url; do
