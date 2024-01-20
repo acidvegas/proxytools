@@ -18,7 +18,7 @@ proxies = list()
 def find_proxies(url: str) -> str:
 	'''
 	Check a URL for IP:PORT proxies.
-	
+
 	:param url: The URL to check for proxies.
 	'''
 	try:
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--concurrency', help='number of concurrent threads to use (default: 10)', default=10, type=int)
 	args = parser.parse_args()
 
-	logging.basicConfig(format='%(level)s %(message)s', level=logging.INFO)
+	logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 	if not os.path.isfile(args.input):
 		if args.input.startswith('https://') or args.input.startswith('http://'):
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 			proxy_sources = [args.input]
 		else:
 			logging.fatal('input file does not exist!')
-	
+
 	proxy_sources = open(args.input, 'r').read().split('\n')
 
 	if not proxy_sources:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	with concurrent.futures.ThreadPoolExecutor(max_workers=args.concurrency) as executor:
 		futures = [executor.submit(find_proxies, url) for url in proxy_sources]
 	concurrent.futures.wait(futures)
-	
+
 	if proxies:
 		logging.info('found \033[32m{len(proxies):,}\033[0m total proxies!')
 		proxies.sort()
