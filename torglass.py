@@ -62,20 +62,20 @@ if __name__ == '__main__':
 
 	print('loading Tor descriptors... (this could take a while)')
 	tor_data = get_descriptors()
-	
+
 	with open('tor.json', 'w') as fd:
 		json.dump(tor_data['relay'], fd)
 	with open('tor.exit.json', 'w') as fd:
 		json.dump(tor_data['exit'], fd)
 
-	print('Relays: {0:,}'.foramt(len(tor_data['relay'])))
+	print('Relays: {0:,}'.format(len(tor_data['relay'])))
 	print('Exits : {0:,}'.format(len(tor_data['exit'])))
 
 	try:
 		import ipinfo
 	except ImportError:
 		raise ImportError('missing optional library \'ipinfo\' (https://pypi.org/project/ipinfo/) for map visualization')
-	
+
 	try:
 		handler = ipinfo.getHandler('changeme') # put your ipinfo.io API key here
 		print('Relay Map: ' + handler.getMap([ip['address'] for ip in tor_data['relay']]))
