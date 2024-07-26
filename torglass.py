@@ -7,18 +7,30 @@ A simple script to pull a list of all the Tor relays / exit nodes & generate a j
 The example below will generate a map of all the Tor relays / exit nodes using the ipinfo.io API.
 '''
 
+import datetime
+
 try:
 	import stem.descriptor.remote
 except ImportError:
 	raise SystemExit('missing required library \'stem\' (https://pypi.org/project/stem/)')
 
-def get_descriptors() -> dict:
-	''' Generate a json database of all Tor relays & exit nodes '''
-	tor_map = {'relay':list(),'exit':list()}
-	for relay in stem.descriptor.remote.get_server_descriptors():
+
+def get_descriptors(start_time = None) -> dict:
+	'''
+	Generate a json database of all Tor relays & exit nodes.
+
+  	:param start_time: (optional) datetime object to start from	
+	'''
+
+	tor_map = { 'relay': [], 'exit': [] }
+
+	source = stem.descriptor.collector.get_server_descriptors(start = start_time) if start_time else stem.descriptor.remote.get_server_descriptors()
+
+	for relay in source:
 		data = {
 			'nickname'                    : relay.nickname,
 			'fingerprint'                 : relay.fingerprint,
+			'or_addresses'                : relay.or_addresses,
 			'published'                   : str(relay.published) if relay.published else None,
 			'address'                     : relay.address,
 			'or_port'                     : relay.or_port,
@@ -28,7 +40,7 @@ def get_descriptors() -> dict:
 			'tor_version'                 : str(relay.tor_version),
 			'operating_system'            : relay.operating_system,
 			'uptime'                      : relay.uptime,
-			'contact'                     : str(relay.contact) if relay.contact else None,
+			'contact'                     : relay.contact.decode('utf-8') if relay.contact else None,
 			'exit_policy'                 : str(relay.exit_policy)    if relay.exit_policy    else None,
 			'exit_policy_v6'              : str(relay.exit_policy_v6) if relay.exit_policy_v6 else None,
 			'bridge_distribution'         : relay.bridge_distribution,
@@ -47,21 +59,28 @@ def get_descriptors() -> dict:
 			'extra_info_sha256_digest'    : relay.extra_info_sha256_digest,
 			'eventdns'                    : relay.eventdns,
 			'ntor_onion_key'              : relay.ntor_onion_key,
-			'or_addresses'                : relay.or_addresses,
 			'protocols'                   : relay.protocols
 		}
+  
 		if relay.exit_policy.is_exiting_allowed():
 			tor_map['exit'].append(data)
 		else:
 			tor_map['relay'].append(data)
+
 	return tor_map
+
 
 
 if __name__ == '__main__':
 	import json
 
 	print('loading Tor descriptors... (this could take a while)')
+ 
+	now = datetime.datetime.now(datetime.timezone.utc)
+	way_back = now.replace(year=now.year-1)
+
 	tor_data = get_descriptors()
+	#tor_data = get_descriptors(way_back)
 
 	with open('tor.json', 'w') as fd:
 		json.dump(tor_data['relay'], fd)
