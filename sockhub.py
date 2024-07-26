@@ -21,6 +21,9 @@ def find_proxies(url: str) -> str:
 
 	:param url: The URL to check for proxies.
 	'''
+
+	global proxies
+
 	try:
 		source = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'SockHub/1.0'})).read().decode()
 		if source:
