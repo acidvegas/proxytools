@@ -73,5 +73,7 @@ https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/sock
 https://raw.githubusercontent.com/saschazesiger/Free-Proxies/master/proxies/socks5.txt
 https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks4.txt
 https://raw.githubusercontent.com/zevtyardt/proxy-list/main/socks5.txt
+https://rcloak.com/api/proxies/raw?protocol=socks4
+https://rcloak.com/api/proxies/raw?protocol=socks5
 https://spys.me/socks.txt
 https://spys.one/en/socks-proxy-list/
